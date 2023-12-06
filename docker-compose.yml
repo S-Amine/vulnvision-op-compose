@@ -251,33 +251,6 @@ services:
       - com.centurylinklabs.watchtower.enable=true
   # End vulnvision stack
 
-  # Start Httpx stak
-  # Redis
-  django_httpx_redis:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: redis:7.2-rc1-alpine
-    restart: always
-    container_name: django_httpx_redis
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
-
-  # Postgres database
-  django_httpx_postgres_db:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: postgres:15.3
-    env_file:
-      - env_files/httpx_postgres.env
-    container_name: django_httpx_postgres_db
-    restart: always
-    volumes:
-      - django_httpx_postgres_db:/var/lib/postgresql/data
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
-
   # Start Nmap stak
   # Redis
   django_nmap_redis:
