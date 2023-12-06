@@ -89,7 +89,7 @@ services:
     command: postgres -c max_connections=1000
     restart: always
     volumes:
-      - vulnvision_postgres_db:/var/lib/postgresql/data
+      - vulnvision_op_postgres_db:/var/lib/postgresql/data
     labels:
       - com.centurylinklabs.watchtower.enable=false
     # volumes:
@@ -726,7 +726,7 @@ services:
 volumes:
   portainer-data:
   prometheus_data:
-  vulnvision_postgres_db:
+  vulnvision_op_postgres_db:
   django_nmap_postgres_db:
   django_nuclei_postgres_db:
   gpg_data_vol:
