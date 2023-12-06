@@ -113,7 +113,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -132,7 +132,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -151,7 +151,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -169,7 +169,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -187,7 +187,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -205,7 +205,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -225,7 +225,7 @@ services:
       - vulnvision_redis
       - rabbitmq
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
@@ -246,7 +246,7 @@ services:
       - vulnvision_postgres_db
       - vulnvision_redis
     volumes:
-      - temp/:/tmp/gvm/gvmd
+      - ./temp:/tmp/gvm/gvmd
     labels:
       - com.centurylinklabs.watchtower.enable=true
   # End vulnvision stack
@@ -652,7 +652,7 @@ services:
       - data_objects_vol:/var/lib/gvm/data-objects/gvmd
       - vt_data_vol:/var/lib/openvas/plugins
       - psql_data_vol:/var/lib/postgresql
-      - temp/:/run/gvmd
+      - ./temp:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
       - psql_socket_vol:/var/run/postgresql
     depends_on:
@@ -675,7 +675,7 @@ services:
     ports:
       - 127.0.0.1:9392:80
     volumes:
-      - temp/:/run/gvmd
+      - ./temp:/run/gvmd
     depends_on:
       - gvmd
 
