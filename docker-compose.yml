@@ -1,0 +1,770 @@
+version: "3.8"
+
+services:
+  # The watchtower service
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME/.docker/config.json:/config.json
+    command: --label-enable --interval 30
+  # Portainer service
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    privileged: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - VIRTUAL_HOST=*
+      - VIRTUAL_PORT=9000
+      - ENABLE_EDGE_AGENT=true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Rabbitmq service
+  rabbitmq:
+    image: saidiaminedocker/rabbitmq_multi:latest
+    container_name: rabbitmq
+    restart: always
+    command: create_users.sh
+    env_file:
+      - env_files/rabbitmq.env
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # nginx service
+  nginx:
+    image: ubuntu/nginx:latest
+    restart: always
+    container_name: nginx
+    ports:
+      - 8000:80
+    volumes:
+      - ./nginx/nginx-setup.conf:/etc/nginx/sites-available/default
+      - ./dash/build:/var/www/front
+      - ./teams/build:/var/www/teams
+    depends_on:
+      - portainer
+      - grafana
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+
+  # Start Base server stak
+  # Redis
+  vulnvision_redis:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: redis:7.2-rc1-alpine
+    restart: always
+    container_name: vulnvision_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Postgres database
+  vulnvision_postgres_db:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: postgres:15.3
+    env_file:
+      - env_files/vulnvision_postgres.env
+    container_name: vulnvision_postgres_db
+    command: postgres -c max_connections=1000
+    restart: always
+    volumes:
+      - vulnvision_postgres_db:/var/lib/postgresql/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+    # volumes:
+    #   - .postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+
+
+  # vulnvision service
+  vulnvision:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server
+    restart: always
+    command: bash -c "sleep 10 && python manage.py migrate && python manage.py collectstatic --noinput  && python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - env_files/vulnvision.env
+    ports:
+      - 8000:8000
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # vulnvision normal worker
+  vulnvision_beat:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_beat
+    restart: always
+    command: bash -c "sleep 15 && celery -A vulnvision.celery beat"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # vulnvision normal worker
+  vulnvision_normal_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_normal_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A vulnvision.celery worker -E"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  vulnvision_nuclei_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_nuclei_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q nuclei -E"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  vulnvision_hack_port_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_hack_port_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q hack_port -E"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  vulnvision_read_write_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_read_write_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q read_write -E"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # vulnvision RABBITMQ Consumer service
+  vulnvision_consumer:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_consumer
+    restart: always
+    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+      - rabbitmq
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # vulnvision Channels service
+  vulnvision_channels:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/vulnvision-op:latest
+    container_name: base_server_channsave_acunetixels
+    restart: always
+    command: daphne -b 0.0.0.0 -p 8001 vulnvision.asgi:application
+    # ports:
+    #   - 8001:8001
+    env_file:
+      - env_files/vulnvision.env
+    depends_on:
+      - vulnvision_postgres_db
+      - vulnvision_redis
+    volumes:
+      - temp/:/tmp/gvm/gvmd
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+  # End vulnvision stack
+
+  # Start Httpx stak
+  # Redis
+  django_httpx_redis:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: redis:7.2-rc1-alpine
+    restart: always
+    container_name: django_httpx_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Postgres database
+  django_httpx_postgres_db:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: postgres:15.3
+    env_file:
+      - env_files/httpx_postgres.env
+    container_name: django_httpx_postgres_db
+    restart: always
+    volumes:
+      - django_httpx_postgres_db:/var/lib/postgresql/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Start Nmap stak
+  # Redis
+  django_nmap_redis:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: redis:7.2-rc1-alpine
+    restart: always
+    container_name: django_nmap_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Postgres database
+  django_nmap_postgres_db:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: postgres:15.3
+    env_file:
+      - env_files/nmap_postgres.env
+    container_name: django_nmap_postgres_db
+    restart: always
+    volumes:
+      - django_nmap_postgres_db:/var/lib/postgresql/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+
+  # django_nmap service
+  django_nmap:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nmap:latest
+    container_name: django_nmap
+    restart: always
+    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8003"
+    env_file:
+      - env_files/nmap.env
+    # ports:
+    #   - 8003:8003
+    depends_on:
+      - django_nmap_postgres_db
+      - django_nmap_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # django_nmap Celery worker
+  django_nmap_general_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nmap:latest
+    container_name: django_nmap_general_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A django_nmap worker -Q general -E"
+    env_file:
+      - env_files/nmap.env
+    depends_on:
+      - django_nmap_postgres_db
+      - django_nmap_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  django_nmap_scan_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nmap:latest
+    container_name: django_nmap_scan_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A django_nmap worker -Q scan -E"
+    env_file:
+      - env_files/nmap.env
+    depends_on:
+      - django_nmap_postgres_db
+      - django_nmap_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # django_nmap RABBITMQ Consumer service
+  django_nmap_consumer:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nmap:latest
+    container_name: django_nmap_consumer
+    restart: always
+    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
+    env_file:
+      - env_files/nmap.env
+    depends_on:
+      - django_nmap_postgres_db
+      - django_nmap_redis
+      - rabbitmq
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # End Nmap stak
+
+  # Start Nuclei stack
+  # Redis
+  django_nuclei_redis:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: redis:7.2-rc1-alpine
+    restart: always
+    container_name: django_nuclei_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Postgres database
+  django_nuclei_postgres_db:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: postgres:15.3
+    env_file:
+      - env_files/nuclei_postgres.env
+    container_name: django_nuclei_postgres_db
+    restart: always
+    volumes:
+      - django_nuclei_postgres_db:/var/lib/postgresql/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # django_nuclei service
+  django_nuclei:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nuclei:latest
+    container_name: django_nuclei
+    restart: always
+    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
+    env_file:
+      - env_files/nuclei.env
+    # ports:
+    #   - 8004:8004
+    depends_on:
+      - django_nuclei_postgres_db
+      - django_nuclei_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # django_nuclei Celery worker
+  django_nuclei_general_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nuclei:latest
+    container_name: django_nuclei_general_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A django_nuclei worker -Q general -E"
+    env_file:
+      - env_files/nuclei.env
+    depends_on:
+      - django_nuclei_postgres_db
+      - django_nuclei_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  django_nuclei_scan_worker:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nuclei:latest
+    container_name: django_nuclei_scan_worker
+    restart: always
+    command: bash -c "sleep 15 && celery -A django_nuclei worker -Q scan -E"
+    env_file:
+      - env_files/nuclei.env
+    depends_on:
+      - django_nuclei_postgres_db
+      - django_nuclei_redis
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # django_nuclei RABBITMQ Consumer service
+  django_nuclei_consumer:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: saidiaminedocker/django_nuclei:latest
+    container_name: django_nuclei_consumer
+    restart: always
+    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
+    env_file:
+      - env_files/nuclei.env
+    depends_on:
+      - django_nuclei_postgres_db
+      - django_nuclei_redis
+      - rabbitmq
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # End Nuclei stack
+
+  # Start Analytics service stack
+  # Prometheus service
+  prometheus:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus_grafana/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Node-exporter service
+  node-exporter:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: prom/node-exporter
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
+      - /etc/os-release:/host/etc/os-release
+    # network_mode: host
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+
+
+  # CAdvisor service
+  cadvisor:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: gcr.io/cadvisor/cadvisor:v0.46.0
+    privileged: true
+    user: root
+    container_name: cadvisor
+    restart: always
+    devices:
+     - /dev/kmsg:/dev/kmsg
+    command:
+      - "--docker_only=true"
+    volumes:
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /sys:/sys:ro
+      - /var/run:/var/run:rw
+      - /:/rootfs:ro
+      - /sys/fs/cgroup:/cgroup:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - portainer
+      - rabbitmq
+      - nginx
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  # Grafana service
+  grafana:
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    image: grafana/grafana
+    user: "1000"
+    container_name: grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    volumes:
+      # - ./prometheus_grafana/data:/var/lib/grafana
+      - ./prometheus_grafana/provisioning:/etc/grafana/provisioning/
+    env_file:
+      - env_files/grafana.env
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+
+  gowitness:
+    image: saidiaminedocker/gowitness:latest
+    sysctls:
+      - net.ipv4.tcp_window_scaling=1
+      - net.ipv4.tcp_congestion_control=cubic
+    container_name: gowitness
+    restart: always
+    command: gowitness server --address 0.0.0.0:7171
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+  #END Analytics stack
+
+  # Start GVM Stack
+  vulnerability-tests:
+    image: greenbone/vulnerability-tests
+    environment:
+      STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
+    volumes:
+      - vt_data_vol:/mnt
+
+  notus-data:
+    image: greenbone/notus-data
+    volumes:
+      - notus_data_vol:/mnt
+
+  scap-data:
+    image: greenbone/scap-data
+    volumes:
+      - scap_data_vol:/mnt
+
+  cert-bund-data:
+    image: greenbone/cert-bund-data
+    volumes:
+      - cert_data_vol:/mnt
+
+  dfn-cert-data:
+    image: greenbone/dfn-cert-data
+    volumes:
+      - cert_data_vol:/mnt
+    depends_on:
+      - cert-bund-data
+
+  data-objects:
+    image: greenbone/data-objects
+    volumes:
+      - data_objects_vol:/mnt
+
+  report-formats:
+    image: greenbone/report-formats
+    volumes:
+      - data_objects_vol:/mnt
+    depends_on:
+      - data-objects
+
+  gpg-data:
+    image: greenbone/gpg-data
+    volumes:
+      - gpg_data_vol:/mnt
+
+  redis-server:
+    image: greenbone/redis-server
+    restart: on-failure
+    volumes:
+      - redis_socket_vol:/run/redis/
+
+  pg-gvm:
+    image: greenbone/pg-gvm:stable
+    restart: on-failure
+    volumes:
+      - psql_data_vol:/var/lib/postgresql
+      - psql_socket_vol:/var/run/postgresql
+
+  gvmd:
+    image: greenbone/gvmd:stable
+    restart: on-failure
+    volumes:
+      - gvmd_data_vol:/var/lib/gvm
+      - scap_data_vol:/var/lib/gvm/scap-data/
+      - cert_data_vol:/var/lib/gvm/cert-data
+      - data_objects_vol:/var/lib/gvm/data-objects/gvmd
+      - vt_data_vol:/var/lib/openvas/plugins
+      - psql_data_vol:/var/lib/postgresql
+      - temp/:/run/gvmd
+      - ospd_openvas_socket_vol:/run/ospd
+      - psql_socket_vol:/var/run/postgresql
+    depends_on:
+      pg-gvm:
+        condition: service_started
+      scap-data:
+        condition: service_completed_successfully
+      cert-bund-data:
+        condition: service_completed_successfully
+      dfn-cert-data:
+        condition: service_completed_successfully
+      data-objects:
+        condition: service_completed_successfully
+      report-formats:
+        condition: service_completed_successfully
+
+  gsa:
+    image: greenbone/gsa:stable
+    restart: on-failure
+    ports:
+      - 127.0.0.1:9392:80
+    volumes:
+      - temp/:/run/gvmd
+    depends_on:
+      - gvmd
+
+  ospd-openvas:
+    image: greenbone/ospd-openvas:stable
+    restart: on-failure
+    init: true
+    hostname: ospd-openvas.local
+    cap_add:
+      - NET_ADMIN # for capturing packages in promiscuous mode
+      - NET_RAW # for raw sockets e.g. used for the boreas alive detection
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    command:
+      [
+        "ospd-openvas",
+        "-f",
+        "--config",
+        "/etc/gvm/ospd-openvas.conf",
+        "--mqtt-broker-address",
+        "mqtt-broker",
+        "--notus-feed-dir",
+        "/var/lib/notus/advisories",
+        "-m",
+        "666"
+      ]
+    volumes:
+      - gpg_data_vol:/etc/openvas/gnupg
+      - vt_data_vol:/var/lib/openvas/plugins
+      - notus_data_vol:/var/lib/notus
+      - ospd_openvas_socket_vol:/run/ospd
+      - redis_socket_vol:/run/redis/
+    depends_on:
+      redis-server:
+        condition: service_started
+      gpg-data:
+        condition: service_completed_successfully
+      vulnerability-tests:
+        condition: service_completed_successfully
+
+  mqtt-broker:
+    restart: on-failure
+    image: greenbone/mqtt-broker
+    networks:
+      default:
+        aliases:
+          - mqtt-broker
+          - broker
+
+  notus-scanner:
+    restart: on-failure
+    image: greenbone/notus-scanner:stable
+    volumes:
+      - notus_data_vol:/var/lib/notus
+      - gpg_data_vol:/etc/openvas/gnupg
+    environment:
+      NOTUS_SCANNER_MQTT_BROKER_ADDRESS: mqtt-broker
+      NOTUS_SCANNER_PRODUCTS_DIRECTORY: /var/lib/notus/products
+    depends_on:
+      - mqtt-broker
+      - gpg-data
+      - vulnerability-tests
+
+  gvm-tools:
+    image: greenbone/gvm-tools
+    volumes:
+      - gvmd_socket_vol:/run/gvmd
+      - ospd_openvas_socket_vol:/run/ospd
+    depends_on:
+      - gvmd
+      - ospd-openvas
+  # END GVM stack
+
+volumes:
+  portainer-data:
+  prometheus_data:
+  vulnvision_postgres_db:
+  django_nmap_postgres_db:
+  django_nuclei_postgres_db:
+  gpg_data_vol:
+  scap_data_vol:
+  cert_data_vol:
+  data_objects_vol:
+  gvmd_data_vol:
+  psql_data_vol:
+  vt_data_vol:
+  notus_data_vol:
+  psql_socket_vol:
+  gvmd_socket_vol:
+  ospd_openvas_socket_vol:
+  redis_socket_vol:
