@@ -104,7 +104,7 @@ services:
     image: saidiaminedocker/vulnvision-op:latest
     container_name: base_op_server
     restart: always
-    command: bash -c "sleep 10 && python manage.py migrate && python manage.py collectstatic --noinput  && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     env_file:
       - env_files/vulnvision.env
     ports:
