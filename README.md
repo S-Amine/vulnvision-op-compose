@@ -6,7 +6,7 @@ Follow these steps to install and configure the repository:
 
 ## Prerequisites
 
-Ensure you have Git and Python 3 installed on your Ubuntu machine.
+Ensure your VM already has a static IP address and you have Git and Python 3 installed on your Ubuntu machine.
 
 ### 1. Clone the Repository
 
