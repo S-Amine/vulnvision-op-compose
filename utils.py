@@ -123,7 +123,7 @@ def generate_folder_file(file_name, content, folder_name="env_files"):
     except Exception as e:
         print(f"An error occurred while creating the file: {str(e)}")
 
-def create_nginx_conf(API_SERVER_NAME, WEBSOCKET_SERVER_NAME, PORTAINER_SERVER_NAME, GRAFANA_SERVER_NAME):
+def create_nginx_conf(API_SERVER_NAME):
     nginx_conf = """
 
 
