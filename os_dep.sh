@@ -46,7 +46,7 @@ sudo npm install -g pm2  ;
 pip install -r requirements.txt ;
 
 # Test installation
-docker --version
-docker-compose --version
-npm --version
-pm2 --version
+docker --version ;
+docker-compose --version ;
+npm --version ;
+pm2 --version ;
