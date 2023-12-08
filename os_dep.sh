@@ -1,6 +1,11 @@
 #!/bin/bash
 
 # Update your existing list of packages
+
+sudo mkdir -p /tmp/gvm/ ;
+sudo mkdir -p /tmp/gvm/gvmd ;
+sudo chmod -R 777 /tmp/gvm ;
+
 sudo apt update -y ;
 
 # Install a few prerequisite packages which let apt use packages over HTTPS

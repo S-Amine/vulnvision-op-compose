@@ -44,14 +44,7 @@ The script you provided is an auto deploy script for a Docker Compose environmen
 
 Before starting the script, you'll need to gather the following information:
 
-    2. API Domain: The domain name for the API.
-    3. WebSocket Domain: The domain name for WebSocket communication.
-    4. Portainer Domain: The domain name for Portainer, a container management tool.
-    5. Rabbitmq Management Domain: The domain name for the RabbitMQ management interface.
-    6. Email Host User: The username for the email host.
-    7. Email Host Password: The password for the email host.
-    8. Django Superuser: The username for the Django superuser.
-    9. Django Superuser Password: The password for the Django superuser.
+    1. API Domain: IP domain for the Vulnvision OP App.
 
 Once you provide the required information, the script will generate configuration files, including nginx.conf for Nginx, environment files for each microservice, and RabbitMQ environment files. These files will be used to configure and deploy the Docker Compose environment.
     """
@@ -144,57 +137,6 @@ server {
         proxy_redirect off;
         if (!-f $request_filename) {
             proxy_pass http://vulnvision:8000;
-        }
-    }
-
-}
-
-# WebSocket channels
-server {
-  listen 80;
-  server_name """ + WEBSOCKET_SERVER_NAME + """;
-  location / {
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_redirect off;
-        if (!-f $request_filename) {
-            proxy_pass http://vulnvision_channels:8001;
-        }
-    }
-
-}
-
-# Portainer service
-server {
-  listen 80;
-  server_name """ + PORTAINER_SERVER_NAME + """;
-  location / {
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_redirect off;
-        if (!-f $request_filename) {
-            proxy_pass http://portainer:9000;
-        }
-    }
-  location /api/websocket {
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-                proxy_http_version 1.1;
-                proxy_pass http://portainer:9000/api/websocket;
-        }
-
-}
-
-# Grafana
-server {
-  listen 80;
-  server_name """ + GRAFANA_SERVER_NAME + """;
-  location / {
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_redirect off;
-        if (!-f $request_filename) {
-            proxy_pass http://grafana:3000;
         }
     }
 

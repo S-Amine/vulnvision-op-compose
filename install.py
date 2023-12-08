@@ -10,22 +10,11 @@ while answer not in ("y", "n"):
     answer = input("Do you have these informations [y/n] : ")
     if answer.lower() == "y":
         # Input API domain
-        INPUT_API_DOMAIN = input("\n Please enter the API domain: ")
-
-        # Input Socket domain
-        INPUT_WEBSOCKET_DOMAIN = input("\n Please enter the WebSocket domain: ")
-
-        # Input Portainer domain
-        INPUT_PORTAINER_DOMAIN = input("\n Please enter the Portainer domain: ")
-
-        # Input Grafana domain
-        INPUT_GRAFANA_DOMAIN = input("\n Please enter the Grafana dashboards domain: ")
-
+        INPUT_API_DOMAIN = input("\n Please enter the IP Address of this host : ")
+        # Install Os dependencies
+        os.system("bash os_dep.sh")
         # CREATE NGINX CONF
-        create_nginx_conf(INPUT_API_DOMAIN,
-                          INPUT_WEBSOCKET_DOMAIN,
-                          INPUT_PORTAINER_DOMAIN,
-                          INPUT_GRAFANA_DOMAIN
+        create_nginx_conf(INPUT_API_DOMAIN
                           )
         # General variables
         RABBITMQ_HOST = "rabbitmq"
@@ -38,7 +27,7 @@ while answer not in ("y", "n"):
         VULNVISION_DJANGO_RABBITMQ_USER = "vulnvision"
         VULNVISION_DJANGO_RABBITMQ_PASSWORD = generate_random_password()
         VULNVISION_SECRET_KEY = generate_random_password()
-        VULNVISION_DEBUG = False
+        VULNVISION_DEBUG = True
         VULNVISION_ENV_CONTENT = f"""ALLOWED_HOSTS={VULNVISION_ALLOWED_HOSTS}
 DJANGO_DB_NAME={VULNVISION_DJANGO_DB_NAME}
 DJANGO_DB_USER={VULNVISION_DJANGO_DB_USER}
@@ -50,8 +39,7 @@ SECRET_KEY={VULNVISION_SECRET_KEY}
 DEBUG={VULNVISION_DEBUG}
 REDIS_IP_HOST=vulnvision_redis
 POSTGRES_IP_HOST=vulnvision_postgres_db
-CORS_ALLOWED_ORIGINS=http://127.0.0.1:3000,http://localhost:3000
-        """
+"""
         VULNVISION_POSTGRES_ENV_CONTENT = postgres_env_content(VULNVISION_DJANGO_DB_NAME,
                                                                VULNVISION_DJANGO_DB_USER,
                                                                VULNVISION_DJANGO_DB_PASSWORD,
@@ -116,10 +104,10 @@ CORS_ALLOWED_ORIGINS=http://127.0.0.1:3000,http://localhost:3000
                             )
 
         try:
-            # install_os_dependencies_ubuntu()
-            # docker swarm init
-            # os.system("docker-compose up -d")
-            os.system("docker-compose up")
+            os.system("docker-compose up -d")
+            os.system("pm2 start sync.sh")
+            startup_output = os.popen('pm2 startup').read()  # Get the output of 'pm2 startup'
+            os.system(startup_output.split('\n')[-2])  # Execute the second last line of the output
 
         except Exception as e:
             print(e)
