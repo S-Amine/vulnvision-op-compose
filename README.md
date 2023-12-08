@@ -52,10 +52,10 @@ Once you provide the required information, the script will generate configuratio
 Do you have these informations [y/n] : Y
 ```
 
-If you already have a static IP, enter the actual <ip_address> in the next input:
+If you already have a static IP, enter the actual <your_ip_address> in the next input:
 
 ```bash
-Please enter the IP Address of this host : <ip_address>
+Please enter the IP Address of this host : <your_ip_address>
 ```
 
 Please provide the sudo password for the installation of dependencies. Note that the sudo password is not stored and is used solely by open-source commands in the 'os_dep.sh' file.
@@ -68,8 +68,8 @@ Please provide the sudo password for the installation of dependencies. Note that
 
 Once the installation is complete, you can access the application at:
 
-- http://INPUT_API_DOMAIN:8000
-- http://INPUT_API_DOMAIN:80
+- http://<your_ip_address>:8000
+- http://<your_ip_address>:80
 
 Default credentials:
 
