@@ -6,7 +6,7 @@ services:
     image: containrrr/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - $HOME/.docker/config.json:/config.json
+      # - $HOME/.docker/config.json:/config.json
     command: --label-enable --interval 30
   # Portainer service
   portainer:
