@@ -30,11 +30,12 @@ sudo apt install -y docker-ce  ;
 sudo usermod -aG docker ${USER}  ;
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose  ;
+mkdir -p ~/.docker/cli-plugins/ ;
+curl -SL https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose ;
 
 # Apply executable permissions to the Docker Compose binary
-sudo chmod +x /usr/local/bin/docker-compose  ;
-
+sudo chmod +x ~/.docker/cli-plugins/ ;
+docker compose version ;
 # Install npm
 sudo apt install -y npm  ;
 
