@@ -108,7 +108,7 @@ POSTGRES_IP_HOST=vulnvision_postgres_db
             os.system("pm2 start sync.sh")
             startup_output = os.popen('pm2 startup').read()  # Get the output of 'pm2 startup'
             os.system(startup_output.split('\n')[-2])  # Execute the second last line of the output
-            os.system('''docker exec -it base_op_server bash -c "echo \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin@admin.com', 'adminadmin')\" | python3 manage.py shell"''')
+            os.system("""docker-compose exec -it vulnvision bash -c 'echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('\'admin@admin.com\'', '\''adminadmin'\'')" | python3 manage.pyc shell'""")
             print(f"""
 Installation completed.
 
