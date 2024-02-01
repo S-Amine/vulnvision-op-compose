@@ -831,6 +831,7 @@ volumes:
   vulnvision_op_postgres_db:
   django_nmap_postgres_db:
   django_nuclei_postgres_db:
+  django_httpx_postgres_db:
   gpg_data_vol:
   scap_data_vol:
   cert_data_vol:
