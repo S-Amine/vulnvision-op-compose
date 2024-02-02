@@ -271,7 +271,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server
     restart: always
     command: bash -c "sleep 10 && python manage.pyc migrate && python manage.pyc runserver 0.0.0.0:8000"
@@ -292,7 +292,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_beat
     restart: always
     command: bash -c "sleep 15 && celery -A vulnvision.celery beat"
@@ -311,7 +311,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_normal_worker
     restart: always
     command: bash -c "sleep 15 && celery -A vulnvision.celery worker -E"
@@ -329,7 +329,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_nuclei_worker
     restart: always
     command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q nuclei -E"
@@ -347,7 +347,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_hack_port_worker
     restart: always
     command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q hack_port -E"
@@ -365,7 +365,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_read_write_worker
     restart: always
     command: bash -c "sleep 15 && celery -A vulnvision.celery worker -Q read_write -E"
@@ -384,7 +384,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_consumer
     restart: always
     command: bash -c "sleep 60 && python manage.pyc rabbitmq_consume"
@@ -404,7 +404,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/vulnvision-op:test_prod
+    image: saidiaminedocker/vulnvision-op:production
     container_name: base_op_server_channsave_acunetixels
     restart: always
     command: daphne -b 0.0.0.0 -p 8001 vulnvision.asgi:application
