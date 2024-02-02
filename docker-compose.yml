@@ -454,10 +454,10 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nmap:latest
+    image: saidiaminedocker/django_nmap:production
     container_name: django_nmap
     restart: always
-    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8003"
+    command: bash -c "sleep 10 && python manage.pyc migrate && python manage.pyc runserver 0.0.0.0:8003"
     env_file:
       - env_files/nmap.env
     # ports:
@@ -473,7 +473,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nmap:latest
+    image: saidiaminedocker/django_nmap:production
     container_name: django_nmap_general_worker
     restart: always
     command: bash -c "sleep 15 && celery -A django_nmap worker -Q general -E"
@@ -489,7 +489,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nmap:latest
+    image: saidiaminedocker/django_nmap:production
     container_name: django_nmap_scan_worker
     restart: always
     command: bash -c "sleep 15 && celery -A django_nmap worker -Q scan -E"
@@ -506,10 +506,10 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nmap:latest
+    image: saidiaminedocker/django_nmap:production
     container_name: django_nmap_consumer
     restart: always
-    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
+    command: bash -c "sleep 60 && python manage.pyc rabbitmq_consume"
     env_file:
       - env_files/nmap.env
     depends_on:
@@ -553,10 +553,10 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nuclei:latest
+    image: saidiaminedocker/django_nuclei:production
     container_name: django_nuclei
     restart: always
-    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
+    command: bash -c "sleep 10 && python manage.pyc migrate && python manage.pyc runserver 0.0.0.0:8004"
     env_file:
       - env_files/nuclei.env
     # ports:
@@ -572,7 +572,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nuclei:latest
+    image: saidiaminedocker/django_nuclei:production
     container_name: django_nuclei_general_worker
     restart: always
     command: bash -c "sleep 15 && celery -A django_nuclei worker -Q general -E"
@@ -588,7 +588,7 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nuclei:latest
+    image: saidiaminedocker/django_nuclei:production
     container_name: django_nuclei_scan_worker
     restart: always
     command: bash -c "sleep 15 && celery -A django_nuclei worker -Q scan -E"
@@ -605,10 +605,10 @@ services:
     sysctls:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_nuclei:latest
+    image: saidiaminedocker/django_nuclei:production
     container_name: django_nuclei_consumer
     restart: always
-    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
+    command: bash -c "sleep 60 && python manage.pyc rabbitmq_consume"
     env_file:
       - env_files/nuclei.env
     depends_on:
