@@ -521,106 +521,6 @@ services:
 
   # End Nmap stak
 
-  # Start Httpx stak
-  # Redis
-  django_httpx_redis:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: redis:7.2-rc1-alpine
-    restart: always
-    container_name: django_httpx_redis
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
-
-  # Postgres database
-  django_httpx_postgres_db:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: postgres:15.3
-    env_file:
-      - env_files/httpx_postgres.env
-    container_name: django_httpx_postgres_db
-    restart: always
-    volumes:
-      - django_httpx_postgres_db:/var/lib/postgresql/data
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
-
-
-  # django_httpx service
-  django_httpx:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_httpx:latest
-    container_name: django_httpx
-    restart: always
-    command: bash -c "sleep 10 && python manage.py migrate && python manage.py runserver 0.0.0.0:8002"
-    env_file:
-      - env_files/httpx.env
-    # ports:
-    #   - 8002:8002
-    depends_on:
-      - django_httpx_postgres_db
-      - django_httpx_redis
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-
-  # django_httpx Celery worker
-  django_httpx_general_worker:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_httpx:latest
-    container_name: django_httpx_general_worker
-    restart: always
-    command: bash -c "sleep 15 && celery -A django_httpx worker -Q general -E"
-    env_file:
-      - env_files/httpx.env
-    depends_on:
-      - django_httpx_postgres_db
-      - django_httpx_redis
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-
-  django_httpx_scan_worker:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_httpx:latest
-    container_name: django_httpx_scan_worker
-    restart: always
-    command: bash -c "sleep 15 && celery -A django_httpx worker -Q scan -E"
-    env_file:
-      - env_files/httpx.env
-    depends_on:
-      - django_httpx_postgres_db
-      - django_httpx_redis
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-
-  # django_httpx RABBITMQ Consumer service
-  django_httpx_consumer:
-    sysctls:
-      - net.ipv4.tcp_window_scaling=1
-      - net.ipv4.tcp_congestion_control=cubic
-    image: saidiaminedocker/django_httpx:latest
-    container_name: django_httpx_consumer
-    restart: always
-    command: bash -c "sleep 60 && python manage.py rabbitmq_consume"
-    env_file:
-      - env_files/httpx.env
-    depends_on:
-      - django_httpx_postgres_db
-      - django_httpx_redis
-      - rabbitmq
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-
-  # End Httpx stak
-
   # Start Nuclei stack
   # Redis
   django_nuclei_redis:
@@ -831,7 +731,6 @@ volumes:
   vulnvision_op_postgres_db:
   django_nmap_postgres_db:
   django_nuclei_postgres_db:
-  django_httpx_postgres_db:
   gpg_data_vol:
   scap_data_vol:
   cert_data_vol:
