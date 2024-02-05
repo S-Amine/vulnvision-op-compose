@@ -7,6 +7,9 @@ def start():
       for line in process.stdout:
           print(line.decode())
       process.wait()
-
+      process = subprocess.Popen(["docker-compose", "restart"], cwd=repo_path, stdout=subprocess.PIPE)
+      for line in process.stdout:
+          print(line.decode())
+      process.wait()
 if __name__ == "__main__":
     start()
