@@ -234,7 +234,7 @@ services:
     labels:
       - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.depends-on=vulnvision
-
+    #
 
   # Start Base server stak
   # Redis
