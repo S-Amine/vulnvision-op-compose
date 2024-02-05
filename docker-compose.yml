@@ -232,7 +232,7 @@ services:
       - net.ipv4.tcp_window_scaling=1
       - net.ipv4.tcp_congestion_control=cubic
     labels:
-      - com.centurylinklabs.watchtower.enable=true
+      # - com.centurylinklabs.watchtower.enable=true
       - com.centurylinklabs.watchtower.depends-on=vulnvision
     #
 
